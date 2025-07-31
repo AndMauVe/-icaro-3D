@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo por Categorías - Modelos 3D</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Mi Tienda - Catálogo de Modelos 3D</h1>
+    <p class="subtitle">Explora nuestra colección organizada por categorías</p>
+    <div class="user-info">
+      <span id="user-name">Usuario</span>
+      <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="categorias-container">
+      <!-- Las categorías se cargarán dinámicamente aquí -->
+      <div id="categorias-grid" class="categorias-grid">
+        <!-- Las categorías se cargarán aquí -->
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Mi Tienda. Todos los derechos reservados.
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // Función para cargar y mostrar categorías
+    async function cargarCategorias() {
+      try {
+        const response = await fetch('Data/productos.json');
+        const data = await response.json();
+        
+        // Agrupar productos por categoría
+        const categorias = {};
+        data.productos.forEach(producto => {
+          if (!categorias[producto.categoria]) {
+            categorias[producto.categoria] = [];
+          }
+          categorias[producto.categoria].push(producto);
+        });
+        
+        const contenedor = document.getElementById('categorias-grid');
+        
+        // Crear tarjetas de categoría
+        Object.keys(categorias).forEach(categoria => {
+          const categoriaElement = crearElementoCategoria(categoria, categorias[categoria]);
+          contenedor.appendChild(categoriaElement);
+        });
+        
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    }
+
+    // Función para crear el elemento HTML de cada categoría
+    function crearElementoCategoria(nombreCategoria, productos) {
+      const categoriaDiv = document.createElement('div');
+      categoriaDiv.className = 'categoria-card';
+      
+      // Obtener la imagen del primer producto de la categoría como representativa
+      const imagenRepresentativa = productos[0].imagen;
+      
+      categoriaDiv.innerHTML = `
+        <div class="categoria-imagen">
+          <img src="${imagenRepresentativa}" alt="${nombreCategoria}" />
+          <div class="categoria-overlay">
+            <h2>${nombreCategoria}</h2>
+            <p>${productos.length} modelo${productos.length > 1 ? 's' : ''} disponible${productos.length > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <div class="categoria-info">
+          <h3>${nombreCategoria}</h3>
+          <p class="categoria-descripcion">Explora nuestra colección de modelos ${nombreCategoria.toLowerCase()}</p>
+          <div class="productos-preview">
+            ${productos.slice(0, 3).map(producto => `
+              <div class="producto-mini">
+                <img src="${producto.imagen}" alt="${producto.nombre}" />
+                <span>${producto.nombre}</span>
+              </div>
+            `).join('')}
+            ${productos.length > 3 ? `<div class="mas-productos">+${productos.length - 3} más</div>` : ''}
+          </div>
+          <button class="ver-categoria-btn" onclick="mostrarProductosCategoria('${nombreCategoria}')">
+            Ver ${nombreCategoria}
+          </button>
+        </div>
+      `;
+      
+      return categoriaDiv;
+    }
+
+    // Función para mostrar productos de una categoría específica
+    function mostrarProductosCategoria(categoria) {
+      // Ocultar categorías y mostrar productos
+      document.querySelector('.categorias-container').style.display = 'none';
+      
+      // Crear vista de productos de la categoría
+      const main = document.querySelector('main');
+      main.innerHTML = `
+        <div class="categoria-productos-container">
+          <div class="categoria-header">
+            <button class="btn-volver-categorias" onclick="volverACategorias()">
+              ← Volver a Categorías
+            </button>
+            <h2>${categoria}</h2>
+          </div>
+          <div id="productos-categoria" class="productos-grid">
+            <!-- Los productos se cargarán aquí -->
+          </div>
+        </div>
+      `;
+      
+      // Cargar productos de la categoría
+      cargarProductosCategoria(categoria);
+    }
+
+    // Función para cargar productos de una categoría específica
+    async function cargarProductosCategoria(categoria) {
+      try {
+        const response = await fetch('Data/productos.json');
+        const data = await response.json();
+        
+        const productosCategoria = data.productos.filter(p => p.categoria === categoria);
+        const contenedor = document.getElementById('productos-categoria');
+        
+        productosCategoria.forEach(producto => {
+          const productoElement = crearElementoProducto(producto);
+          contenedor.appendChild(productoElement);
+        });
+        
+      } catch (error) {
+        console.error('Error al cargar productos de categoría:', error);
+      }
+    }
+
+    // Función para volver a la vista de categorías
+    function volverACategorias() {
+      window.location.reload();
+    }
+
+    // Cargar categorías cuando la página esté lista
+    document.addEventListener('DOMContentLoaded', cargarCategorias);
+
+    // Verificar sesión de usuario
+    function verificarSesion() {
+      const usuarioGuardado = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+      
+      if (!usuarioGuardado) {
+        // Si no hay sesión, redirigir al login
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      try {
+        const usuario = JSON.parse(usuarioGuardado);
+        document.getElementById('user-name').textContent = `${usuario.nombre} ${usuario.apellido}`;
+      } catch (error) {
+        console.error('Error al cargar sesión:', error);
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Función para cerrar sesión
+    function cerrarSesion() {
+      localStorage.removeItem('usuario');
+      sessionStorage.removeItem('usuario');
+      window.location.href = 'index.html';
+    }
+
+    // Verificar sesión al cargar la página
+    verificarSesion();
+  </script>
+
+</body>
+</html> 

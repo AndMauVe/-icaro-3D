@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor 3D - Producto</title>
+
+  <!-- model-viewer desde CDN -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <!-- Enlaces a CSS y JS -->
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="script.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1 id="titulo-producto">Mi Tienda - Modelo 3D</h1>
+  </header>
+
+  <main>
+    <div class="producto-detalle-container">
+      <div class="producto-info-panel">
+        <h2 id="nombre-producto">Cargando producto...</h2>
+        <p id="descripcion-producto" class="descripcion-producto">Cargando descripción...</p>
+        
+        <div class="producto-meta">
+          <div class="categoria-precio">
+            <span id="categoria-producto" class="categoria">Categoría</span>
+            <span id="precio-producto" class="precio">$0.00</span>
+          </div>
+          
+          <div class="acciones-producto">
+            <button id="btn-comprar" class="btn-comprar" onclick="comprarProducto()">
+              🛒 Comprar Ahora
+            </button>
+            <button id="btn-carrito" class="btn-carrito" onclick="agregarAlCarrito()">
+              📦 Agregar al Carrito
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="visor-3d-container">
+        <model-viewer 
+          id="visor3d"
+          src=""
+          alt="Modelo 3D del producto"
+          auto-rotate 
+          auto-rotate-delay="2000"
+          camera-controls 
+          ar 
+          shadow-intensity="1"
+          exposure="1"
+          environment-image="neutral"
+          loading="eager"
+        >
+          <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner"></div>
+            <p>Cargando modelo 3D...</p>
+          </div>
+        </model-viewer>
+
+        <div class="controles-visor">
+          <p>Usa el mouse para rotar, acercar o alejar el modelo.</p>
+          <div class="botones-control">
+            <button onclick="resetCamera()" class="btn-control">🔄 Resetear Vista</button>
+            <button onclick="toggleAutoRotate()" class="btn-control">⏸️ Pausar Rotación</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="navegacion">
+      <a href="vista_previa.html" class="btn-volver">
+        ← Volver al Catálogo
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Mi Tienda. Todos los derechos reservados.
+  </footer>
+
+  <script>
+    let productoActual = null;
+    let autoRotateEnabled = true;
+
+    // Función para obtener parámetros de la URL
+    function obtenerParametroURL(nombre) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(nombre);
+    }
+
+    // Función para cargar el producto según el ID
+    async function cargarProducto() {
+      const productoId = obtenerParametroURL('id');
+      
+      if (!productoId) {
+        mostrarError('No se especificó un producto');
+        return;
+      }
+
+      try {
+        const response = await fetch('Data/productos.json');
+        const data = await response.json();
+        
+        productoActual = data.productos.find(p => p.id == productoId);
+        
+        if (!productoActual) {
+          mostrarError('Producto no encontrado');
+          return;
+        }
+
+        actualizarInterfaz();
+        cargarModelo3D();
+        
+      } catch (error) {
+        console.error('Error al cargar producto:', error);
+        mostrarError('Error al cargar el producto');
+      }
+    }
+
+    // Función para actualizar la interfaz con la información del producto
+    function actualizarInterfaz() {
+      document.getElementById('titulo-producto').textContent = `Mi Tienda - ${productoActual.nombre}`;
+      document.getElementById('nombre-producto').textContent = productoActual.nombre;
+      document.getElementById('descripcion-producto').textContent = productoActual.descripcion;
+      document.getElementById('categoria-producto').textContent = productoActual.categoria;
+      document.getElementById('precio-producto').textContent = productoActual.precio;
+      
+      // Actualizar título de la página
+      document.title = `Visor 3D - ${productoActual.nombre}`;
+    }
+
+    // Función para cargar el modelo 3D
+    function cargarModelo3D() {
+      const modelViewer = document.getElementById('visor3d');
+      const loadingSpinner = document.getElementById('loading-spinner');
+      
+      console.log('Intentando cargar modelo 3D:', productoActual.archivo_3d);
+      
+      // Mostrar spinner de carga
+      loadingSpinner.style.display = 'flex';
+      
+      // Verificar si existe el archivo 3D
+      if (productoActual.archivo_3d) {
+        // Intentar cargar el modelo 3D directamente
+        modelViewer.src = productoActual.archivo_3d;
+        
+        // Escuchar eventos del model-viewer para detectar errores
+        modelViewer.addEventListener('error', function(event) {
+          console.error('Error al cargar modelo 3D:', productoActual.archivo_3d, event);
+          mostrarModeloNoDisponible();
+        });
+        
+        // Escuchar cuando el modelo se carga exitosamente
+        modelViewer.addEventListener('load', function() {
+          console.log('Modelo 3D cargado exitosamente:', productoActual.archivo_3d);
+          loadingSpinner.style.display = 'none';
+        });
+        
+        // Escuchar cuando el modelo termina de cargar
+        modelViewer.addEventListener('model-visibility', function() {
+          console.log('Modelo 3D visible:', productoActual.archivo_3d);
+          loadingSpinner.style.display = 'none';
+        });
+        
+        // Timeout de seguridad por si el modelo no carga
+        setTimeout(() => {
+          if (loadingSpinner.style.display !== 'none') {
+            console.log('Timeout - verificando estado del modelo:', productoActual.archivo_3d);
+            
+            // Verificar si el modelo se cargó correctamente
+            if (modelViewer.src && modelViewer.src !== '') {
+              // Si tiene src pero no se cargó, puede ser un problema de formato
+              console.log('Modelo tiene src pero no se cargó, verificando formato...');
+              
+              // Intentar verificar si el archivo existe haciendo una petición fetch
+              fetch(productoActual.archivo_3d, { method: 'HEAD' })
+                .then(response => {
+                  if (!response.ok) {
+                    console.error('Archivo no encontrado:', productoActual.archivo_3d);
+                    mostrarModeloNoDisponible();
+                  } else {
+                    console.log('Archivo existe pero no se carga en model-viewer');
+                    // El archivo existe pero no se carga, puede ser un problema de formato
+                    mostrarModeloNoDisponible();
+                  }
+                })
+                .catch(error => {
+                  console.error('Error al verificar archivo:', error);
+                  mostrarModeloNoDisponible();
+                });
+            } else {
+              mostrarModeloNoDisponible();
+            }
+          }
+        }, 8000); // Aumentado a 8 segundos para dar más tiempo
+        
+      } else {
+        // Si no hay archivo 3D especificado
+        console.log('No hay archivo 3D especificado para este producto');
+        mostrarModeloNoDisponible();
+      }
+    }
+
+    // Función para mostrar que el modelo 3D no está disponible
+    function mostrarModeloNoDisponible() {
+      const modelViewer = document.getElementById('visor3d');
+      const loadingSpinner = document.getElementById('loading-spinner');
+      
+      // Ocultar spinner
+      loadingSpinner.style.display = 'none';
+      
+      // Ocultar model-viewer y mostrar imagen estática
+      modelViewer.style.display = 'none';
+      const contenedor = modelViewer.parentElement;
+      
+      contenedor.innerHTML = `
+        <div class="imagen-producto">
+          <img src="${productoActual.imagen}" alt="${productoActual.nombre}" />
+          <div class="mensaje-no-disponible">
+            <h3>⚠️ Vista previa de modelo 3D no disponible</h3>
+            <p>El archivo 3D para este producto no está disponible en este momento.</p>
+            <p>Puedes ver la imagen de vista previa arriba.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Función para mostrar errores
+    function mostrarError(mensaje) {
+      const main = document.querySelector('main');
+      main.innerHTML = `
+        <div class="error-container">
+          <h2>Error</h2>
+          <p>${mensaje}</p>
+          <a href="vista_previa.html" class="btn-volver">← Volver al Catálogo</a>
+        </div>
+      `;
+    }
+
+    // Funciones de control del visor 3D
+    function resetCamera() {
+      const modelViewer = document.getElementById('visor3d');
+      if (modelViewer && modelViewer.cameraOrbit) {
+        modelViewer.cameraOrbit = '0deg 75deg 105%';
+      }
+    }
+
+    function toggleAutoRotate() {
+      const modelViewer = document.getElementById('visor3d');
+      if (modelViewer) {
+        autoRotateEnabled = !autoRotateEnabled;
+        modelViewer.autoRotate = autoRotateEnabled;
+        
+        const btn = document.querySelector('.btn-control:last-child');
+        if (autoRotateEnabled) {
+          btn.textContent = '⏸️ Pausar Rotación';
+        } else {
+          btn.textContent = '▶️ Reanudar Rotación';
+        }
+      }
+    }
+
+    // Funciones de compra
+    function comprarProducto() {
+      if (!productoActual) return;
+      
+      alert(`¡Gracias por tu compra!\n\nProducto: ${productoActual.nombre}\nPrecio: ${productoActual.precio}\n\nSerás redirigido al proceso de pago.`);
+      
+      // Aquí puedes redirigir a tu sistema de pago
+      // window.location.href = `pago.html?producto=${productoActual.id}`;
+    }
+
+    function agregarAlCarrito() {
+      if (!productoActual) return;
+      
+      // Obtener carrito del localStorage
+      let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      
+      // Verificar si el producto ya está en el carrito
+      const productoExistente = carrito.find(item => item.id === productoActual.id);
+      
+      if (productoExistente) {
+        productoExistente.cantidad += 1;
+      } else {
+        carrito.push({
+          id: productoActual.id,
+          nombre: productoActual.nombre,
+          precio: productoActual.precio,
+          cantidad: 1
+        });
+      }
+      
+      // Guardar en localStorage
+      localStorage.setItem('carrito', JSON.stringify(carrito));
+      
+      // Mostrar confirmación
+      const btn = document.getElementById('btn-carrito');
+      const textoOriginal = btn.textContent;
+      btn.textContent = '✅ Agregado al Carrito';
+      btn.style.background = '#28a745';
+      
+      setTimeout(() => {
+        btn.textContent = textoOriginal;
+        btn.style.background = '#17a2b8';
+      }, 2000);
+    }
+
+    // Cargar producto cuando la página esté lista
+    document.addEventListener('DOMContentLoaded', cargarProducto);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Avión Comercial",
+      "descripcion": "Modelo 3D de avión comercial con detalles realistas y alta calidad de impresión",
+      "imagen": "Vista_previa/Avion.jpg",
+      "categoria": "Transporte",
+      "precio": "$25.99",
+      "archivo_3d": "Modelos/Avion.glb"
+    },
+    {
+      "id": 2,
+      "nombre": "Modelo Arquitectónico 1",
+      "descripcion": "Diseño arquitectónico moderno con líneas limpias y geometría precisa",
+      "imagen": "Vista_previa/descarga.jpg",
+      "categoria": "Arquitectura",
+      "precio": "$19.99",
+      "archivo_3d": "Modelos/Arquitectura1.glb"
+    },
+    {
+      "id": 3,
+      "nombre": "Escultura Artística",
+      "descripcion": "Escultura artística con formas orgánicas y texturas detalladas",
+      "imagen": "Vista_previa/descarga (1).jpg",
+      "categoria": "Arte",
+      "precio": "$22.50",
+      "archivo_3d": "Modelos/Escultura.glb"
+    },
+    {
+      "id": 4,
+      "nombre": "Modelo Mecánico",
+      "descripcion": "Componente mecánico con engranajes y partes móviles detalladas",
+      "imagen": "Vista_previa/descarga (2).jpg",
+      "categoria": "Ingeniería",
+      "precio": "$28.75",
+      "archivo_3d": "Modelos/Mecanico.glb"
+    },
+    {
+      "id": 5,
+      "nombre": "Diseño Industrial",
+      "descripcion": "Producto industrial con acabados profesionales y funcionalidad optimizada",
+      "imagen": "Vista_previa/descarga (3).jpg",
+      "categoria": "Industrial",
+      "precio": "$31.25",
+      "archivo_3d": "Modelos/Industrial.glb"
+    },
+    {
+      "id": 6,
+      "nombre": "Prototipo Tecnológico",
+      "descripcion": "Prototipo de dispositivo tecnológico con diseño futurista",
+      "imagen": "Vista_previa/descarga (4).jpg",
+      "categoria": "Tecnología",
+      "precio": "$35.00",
+      "archivo_3d": "Modelos/Tecnologico.glb"
+    },
+    {
+      "id": 7,
+      "nombre": "Modelo Conceptual",
+      "descripcion": "Concepto de diseño innovador con formas únicas y creativas",
+      "imagen": "Vista_previa/descarga (5).jpg",
+      "categoria": "Conceptual",
+      "precio": "$26.50",
+      "archivo_3d": "Modelos/Conceptual.glb"
+    },
+    {
+      "id": 8,
+      "nombre": "Vehiculo sencillo",
+      "descripcion": "Concepto de diseño innovador con formas únicas y creativas",
+      "imagen": "Vista_previa/descarga (6).jpg",
+      "categoria": "Transporte",
+      "precio": "$26.50",
+      "archivo_3d": "Modelos/Vehiculo.glb"
+    },
+    {
+      "id": 9,
+      "nombre": "Vehiculo sencillo",
+      "descripcion": "Concepto de diseño innovador con formas únicas y creativas",
+      "imagen": "Vista_previa/descarga (7).jpg",
+      "categoria": "Transporte",
+      "precio": "$26.50",
+      "archivo_3d": "Modelos/Vehiculo.glb"
+    },
+    {
+      "id": 10,
+      "nombre": "Vehiculo sencillo",
+      "descripcion": "Concepto de diseño innovador con formas únicas y creativas",
+      "imagen": "Vista_previa/descarga (8).jpg",
+      "categoria": "Transporte",
+      "precio": "$26.50",
+      "archivo_3d": "Modelos/Vehiculo.glb"
+    },
+    {
+      "id": 11,
+      "nombre": "Vehiculo sencillo",
+      "descripcion": "Concepto de diseño innovador con formas únicas y creativas",
+      "imagen": "Vista_previa/descarga (9).jpg",
+      "categoria": "Transporte",
+      "precio": "$26.50",
+      "archivo_3d": "Modelos/Vehiculo.glb"
+    }
+
+  ]
+} 
