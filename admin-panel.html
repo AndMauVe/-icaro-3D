@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICARO 3D - Panel de Administrador</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="usuarios-manager.js"></script>
+</head>
+<body>
+
+  <div class="admin-container">
+    <header class="admin-header">
+      <h1>ICARO 3D - Panel de Administrador</h1>
+      <div class="admin-user-info">
+        <span id="admin-name">Cargando...</span>
+        <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-stats">
+        <div class="stat-card">
+          <h3>Total Productos</h3>
+          <span id="total-productos">0</span>
+        </div>
+        <div class="stat-card">
+          <h3>Total Usuarios</h3>
+          <span id="total-usuarios">0</span>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button onclick="mostrarFormularioAgregar()" class="btn-admin btn-add">
+          ➕ Agregar Producto
+        </button>
+        <button onclick="mostrarListaProductos()" class="btn-admin btn-list">
+          📋 Ver Productos
+        </button>
+        <button onclick="mostrarInfoIds()" class="btn-admin btn-info">
+          ℹ️ Info IDs
+        </button>
+      </div>
+
+      <!-- Formulario para agregar producto -->
+      <div id="formulario-agregar" class="admin-form-container" style="display: none;">
+        <h2>Agregar Nuevo Producto</h2>
+        <form id="formAgregarProducto" onsubmit="agregarProducto(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nombre-producto">Nombre del Producto</label>
+              <input type="text" id="nombre-producto" name="nombre" required placeholder="Ej: Avión Comercial">
+            </div>
+            
+            <div class="form-group">
+              <label for="categoria-producto">Categoría</label>
+              <select id="categoria-producto" name="categoria" required>
+                <option value="">Seleccionar categoría</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Arquitectura">Arquitectura</option>
+                <option value="Arte">Arte</option>
+                <option value="Ingeniería">Ingeniería</option>
+                <option value="Industrial">Industrial</option>
+                <option value="Tecnología">Tecnología</option>
+                <option value="Conceptual">Conceptual</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="descripcion-producto">Descripción</label>
+            <textarea id="descripcion-producto" name="descripcion" required placeholder="Describe el producto..."></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="precio-producto">Precio</label>
+              <input type="text" id="precio-producto" name="precio" required placeholder="$25.99">
+            </div>
+            
+            <div class="form-group">
+              <label for="id-producto">ID del Producto</label>
+              <select id="id-producto" name="id" required>
+                <option value="">Seleccionar ID disponible</option>
+                <!-- Los IDs disponibles se cargarán dinámicamente -->
+              </select>
+              <small>Selecciona un ID que no esté en uso</small>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="imagen-producto">Imagen de Vista Previa</label>
+              <input type="file" id="imagen-producto" name="imagen" accept="image/*" required>
+              <small>Se guardará en: Vista_previa/</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="archivo-3d">Archivo 3D (.glb)</label>
+              <input type="file" id="archivo-3d" name="archivo_3d" accept=".glb" required>
+              <small>Se guardará en: Modelos/</small>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-submit">
+              <span class="btn-text">Agregar Producto</span>
+              <span class="btn-loading" style="display: none;">Agregando...</span>
+            </button>
+            <button type="button" onclick="ocultarFormularioAgregar()" class="btn-cancel">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Lista de productos para eliminar -->
+      <div id="lista-productos" class="admin-list-container" style="display: none;">
+        <h2>Gestionar Productos</h2>
+        <div id="productos-lista" class="productos-grid">
+          <!-- Los productos se cargarán aquí dinámicamente -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Mensajes de error/éxito -->
+    <div id="message-container" class="message-container" style="display: none;">
+      <div class="message-content">
+        <span id="message-text"></span>
+        <button class="message-close" onclick="ocultarMensaje()">×</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let productos = [];
+    let usuarioActual = null;
+
+    // Verificar si el usuario es administrador
+    function verificarAdmin() {
+      const usuarioGuardado = localStorage.getItem('usuario');
+      
+      if (!usuarioGuardado) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      try {
+        usuarioActual = JSON.parse(usuarioGuardado);
+        
+        if (usuarioActual.rol !== 'admin') {
+          alert('Acceso denegado. Solo los administradores pueden acceder a esta página.');
+          window.location.href = 'vista_previa.html';
+          return;
+        }
+
+        document.getElementById('admin-name').textContent = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+        
+      } catch (error) {
+        console.error('Error al cargar sesión:', error);
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Cargar productos desde el backend
+    async function cargarProductos() {
+      try {
+        const response = await fetch('/api/productos');
+        const data = await response.json();
+        productos = data.productos || [];
+        
+        document.getElementById('total-productos').textContent = productos.length;
+        console.log('Productos cargados:', productos.length);
+        
+        // Actualizar IDs disponibles
+        actualizarIdsDisponibles();
+      } catch (error) {
+        console.error('Error al cargar productos:', error);
+        mostrarMensaje('Error al cargar productos', 'error');
+      }
+    }
+
+    // Función para obtener IDs disponibles desde el backend
+    async function obtenerIdsDisponibles() {
+      try {
+        const response = await fetch('/api/productos/ids-disponibles');
+        const data = await response.json();
+        return data.idsDisponibles || [];
+      } catch (error) {
+        console.error('Error al obtener IDs disponibles:', error);
+        // Fallback: calcular localmente
+        const idsOcupados = productos.map(p => p.id);
+        const idsDisponibles = [];
+        let idActual = 1;
+        while (idsDisponibles.length < 20) {
+          if (!idsOcupados.includes(idActual)) {
+            idsDisponibles.push(idActual);
+          }
+          idActual++;
+        }
+        return idsDisponibles;
+      }
+    }
+
+    // Función para actualizar el select de IDs disponibles
+    async function actualizarIdsDisponibles() {
+      const select = document.getElementById('id-producto');
+      const idsDisponibles = await obtenerIdsDisponibles();
+      
+      // Limpiar opciones existentes excepto la primera
+      select.innerHTML = '<option value="">Seleccionar ID disponible</option>';
+      
+      // Agregar IDs disponibles
+      idsDisponibles.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = `ID ${id}`;
+        select.appendChild(option);
+      });
+    }
+
+    // Cargar estadísticas de usuarios
+    async function cargarEstadisticasUsuarios() {
+      try {
+        const usuariosManager = new UsuariosManager();
+        await usuariosManager.cargarUsuarios();
+        document.getElementById('total-usuarios').textContent = usuariosManager.usuarios.length;
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error);
+      }
+    }
+
+    // Mostrar formulario de agregar producto
+    async function mostrarFormularioAgregar() {
+      document.getElementById('formulario-agregar').style.display = 'block';
+      document.getElementById('lista-productos').style.display = 'none';
+      
+      // Actualizar IDs disponibles al mostrar el formulario
+      await actualizarIdsDisponibles();
+    }
+
+    // Ocultar formulario de agregar producto
+    function ocultarFormularioAgregar() {
+      document.getElementById('formulario-agregar').style.display = 'none';
+      document.getElementById('formAgregarProducto').reset();
+    }
+
+    // Mostrar lista de productos
+    function mostrarListaProductos() {
+      document.getElementById('formulario-agregar').style.display = 'none';
+      document.getElementById('lista-productos').style.display = 'block';
+      renderizarProductos();
+    }
+
+    // Renderizar productos en la lista
+    function renderizarProductos() {
+      const container = document.getElementById('productos-lista');
+      
+      if (productos.length === 0) {
+        container.innerHTML = '<p>No hay productos disponibles.</p>';
+        return;
+      }
+
+      container.innerHTML = productos.map(producto => `
+        <div class="producto-card">
+          <img src="${producto.imagen}" alt="${producto.nombre}" class="producto-imagen">
+          <div class="producto-info">
+            <h3>${producto.nombre}</h3>
+            <p><strong>Categoría:</strong> ${producto.categoria}</p>
+            <p><strong>Precio:</strong> ${producto.precio}</p>
+            <p><strong>ID:</strong> ${producto.id}</p>
+            <p><strong>Archivos:</strong></p>
+            <ul style="font-size: 12px; color: #666; margin: 5px 0;">
+              <li>📷 ${producto.imagen}</li>
+              <li>🎯 ${producto.archivo_3d}</li>
+            </ul>
+          </div>
+          <div class="producto-acciones">
+            <button onclick="eliminarProducto(${producto.id})" class="btn-delete">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Agregar nuevo producto usando el backend
+    async function agregarProducto(event) {
+      event.preventDefault();
+      
+      const formData = new FormData(event.target);
+      const nombre = formData.get('nombre');
+      const categoria = formData.get('categoria');
+      const descripcion = formData.get('descripcion');
+      const precio = formData.get('precio');
+      const id = parseInt(formData.get('id'));
+      const imagenFile = formData.get('imagen');
+      const archivo3DFile = formData.get('archivo_3d');
+
+      // Validaciones básicas
+      if (!nombre || !categoria || !descripcion || !precio || !id) {
+        mostrarMensaje('Todos los campos son requeridos', 'error');
+        return;
+      }
+
+      if (!imagenFile || !archivo3DFile) {
+        mostrarMensaje('Se requieren tanto la imagen como el archivo 3D', 'error');
+        return;
+      }
+
+      // Verificar que el ID esté en la lista de disponibles
+      const idsDisponibles = await obtenerIdsDisponibles();
+      if (!idsDisponibles.includes(id)) {
+        mostrarMensaje(`El ID ${id} no está disponible. Selecciona un ID de la lista.`, 'error');
+        return;
+      }
+
+      // Mostrar loading
+      const btn = event.target.querySelector('.btn-submit');
+      btn.querySelector('.btn-text').style.display = 'none';
+      btn.querySelector('.btn-loading').style.display = 'inline';
+      btn.disabled = true;
+
+      try {
+        // Crear FormData para enviar al backend
+        const backendFormData = new FormData();
+        backendFormData.append('nombre', nombre);
+        backendFormData.append('categoria', categoria);
+        backendFormData.append('descripcion', descripcion);
+        backendFormData.append('precio', precio);
+        backendFormData.append('id', id);
+        backendFormData.append('imagen', imagenFile);
+        backendFormData.append('archivo_3d', archivo3DFile);
+
+        // Enviar al backend
+        const response = await fetch('/api/productos', {
+          method: 'POST',
+          body: backendFormData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al agregar producto');
+        }
+
+        const result = await response.json();
+        
+        // Recargar productos desde el backend
+        await cargarProductos();
+        
+        mostrarMensaje('Producto agregado exitosamente', 'success');
+        
+        // Limpiar formulario
+        event.target.reset();
+        ocultarFormularioAgregar();
+
+      } catch (error) {
+        console.error('Error al agregar producto:', error);
+        mostrarMensaje(`Error al agregar producto: ${error.message}`, 'error');
+      } finally {
+        // Restaurar botón
+        btn.querySelector('.btn-text').style.display = 'inline';
+        btn.querySelector('.btn-loading').style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
+    // Eliminar producto usando el backend
+    async function eliminarProducto(id) {
+      if (confirm(`¿Estás seguro de que quieres eliminar el producto con ID ${id}?`)) {
+        try {
+          const response = await fetch(`/api/productos/${id}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al eliminar producto');
+          }
+
+          const result = await response.json();
+          
+          // Recargar productos desde el backend
+          await cargarProductos();
+          
+          // Re-renderizar lista
+          renderizarProductos();
+          
+          mostrarMensaje(`Producto "${result.producto.nombre}" eliminado exitosamente. Los archivos han sido eliminados del servidor.`, 'success');
+          
+        } catch (error) {
+          console.error('Error al eliminar producto:', error);
+          mostrarMensaje(`Error al eliminar producto: ${error.message}`, 'error');
+        }
+      }
+    }
+
+    // Función para cerrar sesión
+    function cerrarSesion() {
+      localStorage.removeItem('usuario');
+      sessionStorage.removeItem('usuario');
+      window.location.href = 'index.html';
+    }
+
+    // Función para mostrar mensajes
+    function mostrarMensaje(texto, tipo) {
+      const container = document.getElementById('message-container');
+      const textElement = document.getElementById('message-text');
+      
+      // Permitir HTML en el mensaje
+      textElement.innerHTML = texto;
+      container.className = `message-container message-${tipo}`;
+      container.style.display = 'block';
+      
+      // Auto-ocultar después de 8 segundos para mensajes largos
+      setTimeout(() => {
+        ocultarMensaje();
+      }, 8000);
+    }
+
+    // Función para ocultar mensajes
+    function ocultarMensaje() {
+      document.getElementById('message-container').style.display = 'none';
+    }
+
+    // Función para mostrar información de IDs
+    async function mostrarInfoIds() {
+      try {
+        const response = await fetch('/api/productos/ids-disponibles');
+        const data = await response.json();
+        
+        const info = `
+          <strong>Estado de IDs:</strong><br>
+          <strong>IDs Ocupados (${data.idsOcupados.length}):</strong> ${data.idsOcupados.join(', ')}<br>
+          <strong>IDs Disponibles (${data.idsDisponibles.length}):</strong> ${data.idsDisponibles.join(', ')}<br>
+          <strong>Total Productos:</strong> ${data.totalProductos}
+        `;
+        
+        mostrarMensaje(info, 'success');
+      } catch (error) {
+        console.error('Error al obtener información de IDs:', error);
+        // Fallback: usar datos locales
+        const idsOcupados = productos.map(p => p.id).sort((a, b) => a - b);
+        const idsDisponibles = await obtenerIdsDisponibles();
+        
+        const info = `
+          <strong>Estado de IDs (datos locales):</strong><br>
+          <strong>IDs Ocupados (${idsOcupados.length}):</strong> ${idsOcupados.join(', ')}<br>
+          <strong>IDs Disponibles (${idsDisponibles.length}):</strong> ${idsDisponibles.join(', ')}<br>
+          <strong>Total Productos:</strong> ${productos.length}
+        `;
+        
+        mostrarMensaje(info, 'success');
+      }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+      verificarAdmin();
+      cargarProductos();
+      cargarEstadisticasUsuarios();
+    });
+  </script>
+
+</body>
+</html> 

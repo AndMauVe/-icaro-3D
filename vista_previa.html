@@ -13,6 +13,7 @@
     <p class="subtitle">Explora nuestra colección de modelos 3D</p>
     <div class="user-info">
       <span id="user-name">Usuario</span>
+      <button id="admin-panel-btn" class="btn-admin-panel" onclick="irAPanelAdmin()" style="display: none;">Panel Admin</button>
       <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
   </header>
@@ -32,6 +33,26 @@
 
   <script src="script.js"></script>
   <script>
+    // Verificar si el usuario es administrador
+    function verificarAdmin() {
+      const usuarioGuardado = localStorage.getItem('usuario');
+      if (usuarioGuardado) {
+        try {
+          const usuario = JSON.parse(usuarioGuardado);
+          if (usuario.rol === 'admin') {
+            document.getElementById('admin-panel-btn').style.display = 'inline-block';
+          }
+        } catch (error) {
+          console.error('Error al verificar rol:', error);
+        }
+      }
+    }
+
+    // Función para ir al panel de administrador
+    function irAPanelAdmin() {
+      window.location.href = 'admin-panel.html';
+    }
+
     // Función para cargar y mostrar categorías
     async function cargarCategorias() {
       try {
@@ -147,7 +168,10 @@
     }
 
     // Cargar categorías cuando la página esté lista
-    document.addEventListener('DOMContentLoaded', cargarCategorias);
+    document.addEventListener('DOMContentLoaded', function() {
+      cargarCategorias();
+      verificarAdmin();
+    });
 
     // Verificar sesión de usuario
     function verificarSesion() {

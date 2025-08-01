@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mi Tienda - Iniciar Sesión</title>
+  <title>ICARO 3D - Iniciar Sesión</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="usuarios-manager.js"></script>
 </head>
 <body>
 
@@ -29,14 +30,9 @@
             <input type="password" id="password" name="password" required placeholder="Tu contraseña">
           </div>
           
-          <div class="form-options">
-            <label class="checkbox-container">
-              <input type="checkbox" id="remember">
-              <span class="checkmark"></span>
-              Recordarme
-            </label>
-            <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-          </div>
+                     <div class="form-options">
+             <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+           </div>
           
           <button type="submit" class="btn-login">
             <span class="btn-text">Iniciar Sesión</span>
@@ -119,19 +115,17 @@
 
   <script>
     // Variables globales
-    let usuarios = [];
+    let usuariosManager = new UsuariosManager();
     let usuarioActual = null;
 
     // Cargar usuarios al iniciar
     document.addEventListener('DOMContentLoaded', cargarUsuarios);
 
-    // Función para cargar usuarios desde JSON
+    // Función para cargar usuarios usando el gestor
     async function cargarUsuarios() {
       try {
-        const response = await fetch('Data/usuarios.json');
-        const data = await response.json();
-        usuarios = data.usuarios;
-        console.log('Usuarios cargados:', usuarios.length);
+        await usuariosManager.cargarUsuarios();
+        console.log('Usuarios cargados:', usuariosManager.usuarios.length);
       } catch (error) {
         console.error('Error al cargar usuarios:', error);
         mostrarMensaje('Error al cargar usuarios', 'error');
@@ -154,9 +148,8 @@
     async function iniciarSesion(event) {
       event.preventDefault();
       
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const remember = document.getElementById('remember').checked;
+             const email = document.getElementById('email').value;
+       const password = document.getElementById('password').value;
       
       // Mostrar loading
       const btn = event.target.querySelector('.btn-login');
@@ -168,8 +161,8 @@
         // Simular delay de red
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Buscar usuario
-        const usuario = usuarios.find(u => u.email === email && u.password === password && u.activo);
+        // Buscar usuario usando el gestor
+        const usuario = usuariosManager.verificarCredenciales(email, password);
         
         if (usuario) {
           // Guardar sesión
@@ -181,11 +174,8 @@
             rol: usuario.rol
           };
           
-          if (remember) {
-            localStorage.setItem('usuario', JSON.stringify(usuarioActual));
-          } else {
-            sessionStorage.setItem('usuario', JSON.stringify(usuarioActual));
-          }
+                     // Guardar sesión en localStorage (persistente)
+           localStorage.setItem('usuario', JSON.stringify(usuarioActual));
           
           mostrarMensaje(`¡Bienvenido, ${usuario.nombre}!`, 'success');
           
@@ -236,8 +226,8 @@
         return;
       }
       
-      // Verificar si el email ya existe
-      const emailExiste = usuarios.find(u => u.email === email);
+      // Verificar si el email ya existe usando el gestor
+      const emailExiste = usuariosManager.obtenerUsuarioPorEmail(email);
       if (emailExiste) {
         mostrarMensaje('Este correo electrónico ya está registrado', 'error');
         return;
@@ -253,20 +243,17 @@
         // Simular delay de red
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Crear nuevo usuario
+        // Crear nuevo usuario usando el gestor
         const nuevoUsuario = {
-          id: usuarios.length + 1,
           email: email,
           password: password,
           nombre: nombre,
           apellido: apellido,
-          rol: 'usuario',
-          fecha_registro: new Date().toISOString().split('T')[0],
-          activo: true
+          rol: 'usuario'
         };
         
-        // Agregar a la lista (en un sistema real, esto se guardaría en el servidor)
-        usuarios.push(nuevoUsuario);
+        // Agregar usuario usando el gestor
+        usuariosManager.agregarUsuario(nuevoUsuario);
         
         mostrarMensaje('¡Cuenta creada exitosamente!', 'success');
         
@@ -327,8 +314,40 @@
       }
     }
 
+
+
+    // Función para cerrar sesión
+    function cerrarSesion() {
+      localStorage.removeItem('usuario');
+      sessionStorage.removeItem('usuario');
+      usuarioActual = null;
+      window.location.href = 'index.html';
+    }
+
+    // Función para debug del localStorage
+    function debugLocalStorage() {
+      console.log('=== DEBUG LOCALSTORAGE ===');
+      usuariosManager.verificarEstadoLocalStorage();
+      console.log('=== FIN DEBUG ===');
+    }
+
+    // Función para limpiar localStorage (solo para testing)
+    function limpiarLocalStorage() {
+      if (confirm('¿Estás seguro de que quieres limpiar todos los usuarios registrados?')) {
+        usuariosManager.limpiarUsuariosLocales();
+        alert('Usuarios locales eliminados. Recarga la página.');
+      }
+    }
+
+
+
     // Ejecutar verificación de sesión
     verificarSesion();
+    
+    // Debug automático al cargar
+    setTimeout(() => {
+      debugLocalStorage();
+    }, 2000);
   </script>
 
 </body>

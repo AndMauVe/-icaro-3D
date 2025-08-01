@@ -98,7 +98,15 @@
       "categoria": "Transporte",
       "precio": "$26.50",
       "archivo_3d": "Modelos/Vehiculo.glb"
+    },
+    {
+      "id": 12,
+      "nombre": "Totoro",
+      "categoria": "Arte",
+      "descripcion": "Totoro de la pelicula totoro",
+      "precio": "20",
+      "imagen": "Vista_previa/totoro.png",
+      "archivo_3d": "Modelos/totoro.glb"
     }
-
   ]
-} 
+}
