@@ -13,6 +13,7 @@
     <p class="subtitle">Explora nuestra colección de modelos 3D</p>
     <div class="user-info">
       <span id="user-name">Usuario</span>
+      <button onclick="verPedidos()" class="btn-ver-pedidos">📋 Ver Pedidos</button>
       <button id="admin-panel-btn" class="btn-admin-panel" onclick="irAPanelAdmin()" style="display: none;">Panel Admin</button>
       <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
@@ -201,6 +202,129 @@
 
     // Verificar sesión al cargar la página
     verificarSesion();
+
+    // Funciones de pedidos
+    function verPedidos() {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      
+      if (pedidos.length === 0) {
+        alert('No hay pedidos agregados');
+        return;
+      }
+      
+      // Crear modal para mostrar pedidos
+      const modal = document.createElement('div');
+      modal.className = 'modal-pedidos';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>📋 Mis Pedidos</h2>
+            <button onclick="cerrarModal()" class="btn-cerrar">×</button>
+          </div>
+          <div class="pedidos-container">
+            ${pedidos.map((pedido, index) => `
+              <div class="pedido-item">
+                <div class="pedido-imagen">
+                  <img src="${pedido.imagen}" alt="${pedido.nombre}" />
+                </div>
+                <div class="pedido-info">
+                  <h3>${pedido.nombre}</h3>
+                  <p>${pedido.precio}</p>
+                  <p>Cantidad: ${pedido.cantidad}</p>
+                </div>
+                <div class="pedido-checkbox">
+                  <label>
+                    <input type="checkbox" ${pedido.agregado ? 'checked' : ''} 
+                           onchange="toggleAgregado(${index})">
+                    <span>${pedido.agregado ? 'Agregado' : 'No agregado'}</span>
+                  </label>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="modal-footer">
+            <button onclick="realizarPedidoCompleto()" class="btn-realizar-pedido">
+              🛒 Realizar Pedido Completo
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+
+    function cerrarModal() {
+      const modal = document.querySelector('.modal-pedidos');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    function toggleAgregado(index) {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      pedidos[index].agregado = !pedidos[index].agregado;
+      localStorage.setItem('pedidos', JSON.stringify(pedidos));
+      
+      // Actualizar el texto del checkbox
+      const checkbox = event.target;
+      const span = checkbox.nextElementSibling;
+      span.textContent = checkbox.checked ? 'Agregado' : 'No agregado';
+    }
+
+    function realizarPedidoCompleto() {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      const pedidosAgregados = pedidos.filter(pedido => pedido.agregado);
+      
+      if (pedidosAgregados.length === 0) {
+        alert('No hay pedidos seleccionados para enviar');
+        return;
+      }
+      
+      // Obtener información del usuario actual
+      const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+      const nombreUsuario = usuarioActual.nombre || 'Usuario';
+      const telefonoUsuario = usuarioActual.telefono || 'No especificado';
+      
+      const ids = pedidosAgregados.map(pedido => pedido.id).join(', ');
+      const productos = pedidosAgregados.map(pedido => pedido.nombre).join(', ');
+      const mensaje = `🛒 PEDIDO COMPLETO\n\n👤 Cliente: ${nombreUsuario}\n📱 Teléfono: ${telefonoUsuario}\n📦 Productos: ${productos}\n🆔 IDs: ${ids}`;
+      const token = "8260563638:AAHl4TItRl3FpG_1wkX7YRGWOzmqwuJNdG8";
+      const chatId = "5239956110";
+      
+      // URL de la API de Telegram para enviar mensaje
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      
+      // Datos del mensaje
+      const data = {
+        chat_id: chatId,
+        text: mensaje,
+        parse_mode: "HTML"
+      };
+      
+      // Enviar mensaje usando fetch
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          alert('Pedido completo enviado exitosamente a Icaro 3D');
+          // Limpiar pedidos después de enviar
+          localStorage.removeItem('pedidos');
+          cerrarModal();
+        } else {
+          alert('Error al enviar pedido: ' + data.description);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al enviar pedido a Icaro 3D');
+      });
+    }
   </script>
 
 </body>

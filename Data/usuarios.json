@@ -7,6 +7,7 @@
       "nombre": "Administrador",
       "apellido": "Sistema",
       "rol": "admin",
+      "telefono": "573202504788",
       "fecha_registro": "2025-01-01",
       "activo": true
     },
@@ -17,6 +18,7 @@
       "nombre": "Usuario",
       "apellido": "Ejemplo",
       "rol": "usuario",
+      "telefono": "573202504788",
       "fecha_registro": "2025-01-15",
       "activo": true
     }

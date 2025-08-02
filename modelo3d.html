@@ -31,11 +31,11 @@
           </div>
           
           <div class="acciones-producto">
-            <button id="btn-comprar" class="btn-comprar" onclick="comprarProducto()">
-              🛒 Comprar Ahora
+            <button id="btn-comprar" class="btn-comprar" onclick="enviarTelegram()">
+              🛒 Realizar Pedido
             </button>
-            <button id="btn-carrito" class="btn-carrito" onclick="agregarAlCarrito()">
-              📦 Agregar al Carrito
+            <button id="btn-carrito" class="btn-carrito" onclick="agregarAPedidos()">
+              📦 Agregar a Pedidos
             </button>
           </div>
         </div>
@@ -75,6 +75,9 @@
       <a href="vista_previa.html" class="btn-volver">
         ← Volver al Catálogo
       </a>
+      <button onclick="verPedidos()" class="btn-ver-pedidos">
+        📋 Ver Pedidos
+      </button>
     </div>
   </main>
 
@@ -274,39 +277,210 @@
       // window.location.href = `pago.html?producto=${productoActual.id}`;
     }
 
-    function agregarAlCarrito() {
+    // Función para enviar mensaje a Telegram
+    function enviarTelegram() {
       if (!productoActual) return;
       
-      // Obtener carrito del localStorage
-      let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      // Obtener información del usuario actual
+      const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+      const nombreUsuario = usuarioActual.nombre || 'Usuario';
+      const telefonoUsuario = usuarioActual.telefono || 'No especificado';
       
-      // Verificar si el producto ya está en el carrito
-      const productoExistente = carrito.find(item => item.id === productoActual.id);
+      const id = productoActual.id;
+      const nombreProducto = productoActual.nombre;
+      const mensaje = `🛒 NUEVO PEDIDO\n\n👤 Cliente: ${nombreUsuario}\n📱 Teléfono: ${telefonoUsuario}\n📦 Producto: ${nombreProducto}\n🆔 ID Producto: ${id}`;
+      const token = "8260563638:AAHl4TItRl3FpG_1wkX7YRGWOzmqwuJNdG8";
+      const chatId = "5239956110"; // ID del chat donde se enviará el mensaje
+      
+      // URL de la API de Telegram para enviar mensaje
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      
+      // Datos del mensaje
+      const data = {
+        chat_id: chatId,
+        text: mensaje,
+        parse_mode: "HTML"
+      };
+      
+      // Enviar mensaje usando fetch
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          alert('Mensaje enviado exitosamente a Icaro 3D');
+        } else {
+          alert('Error al enviar mensaje: ' + data.description);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al enviar mensaje a Icaro 3D');
+      });
+    }
+
+    function agregarAPedidos() {
+      if (!productoActual) return;
+      
+      // Obtener pedidos del localStorage
+      let pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      
+      // Verificar si el producto ya está en los pedidos
+      const productoExistente = pedidos.find(item => item.id === productoActual.id);
       
       if (productoExistente) {
         productoExistente.cantidad += 1;
       } else {
-        carrito.push({
+        pedidos.push({
           id: productoActual.id,
           nombre: productoActual.nombre,
           precio: productoActual.precio,
-          cantidad: 1
+          imagen: productoActual.imagen,
+          cantidad: 1,
+          agregado: true
         });
       }
       
       // Guardar en localStorage
-      localStorage.setItem('carrito', JSON.stringify(carrito));
+      localStorage.setItem('pedidos', JSON.stringify(pedidos));
       
       // Mostrar confirmación
       const btn = document.getElementById('btn-carrito');
       const textoOriginal = btn.textContent;
-      btn.textContent = '✅ Agregado al Carrito';
+      btn.textContent = '✅ Agregado a Pedidos';
       btn.style.background = '#28a745';
       
       setTimeout(() => {
         btn.textContent = textoOriginal;
         btn.style.background = '#17a2b8';
       }, 2000);
+    }
+
+    function verPedidos() {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      
+      if (pedidos.length === 0) {
+        alert('No hay pedidos agregados');
+        return;
+      }
+      
+      // Crear modal para mostrar pedidos
+      const modal = document.createElement('div');
+      modal.className = 'modal-pedidos';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>📋 Mis Pedidos</h2>
+            <button onclick="cerrarModal()" class="btn-cerrar">×</button>
+          </div>
+          <div class="pedidos-container">
+            ${pedidos.map((pedido, index) => `
+              <div class="pedido-item">
+                <div class="pedido-imagen">
+                  <img src="${pedido.imagen}" alt="${pedido.nombre}" />
+                </div>
+                <div class="pedido-info">
+                  <h3>${pedido.nombre}</h3>
+                  <p>${pedido.precio}</p>
+                  <p>Cantidad: ${pedido.cantidad}</p>
+                </div>
+                <div class="pedido-checkbox">
+                  <label>
+                    <input type="checkbox" ${pedido.agregado ? 'checked' : ''} 
+                           onchange="toggleAgregado(${index})">
+                    <span>${pedido.agregado ? 'Agregado' : 'No agregado'}</span>
+                  </label>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="modal-footer">
+            <button onclick="realizarPedidoCompleto()" class="btn-realizar-pedido">
+              🛒 Realizar Pedido Completo
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+
+    function cerrarModal() {
+      const modal = document.querySelector('.modal-pedidos');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    function toggleAgregado(index) {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      pedidos[index].agregado = !pedidos[index].agregado;
+      localStorage.setItem('pedidos', JSON.stringify(pedidos));
+      
+      // Actualizar el texto del checkbox
+      const checkbox = event.target;
+      const span = checkbox.nextElementSibling;
+      span.textContent = checkbox.checked ? 'Agregado' : 'No agregado';
+    }
+
+    function realizarPedidoCompleto() {
+      const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+      const pedidosAgregados = pedidos.filter(pedido => pedido.agregado);
+      
+      if (pedidosAgregados.length === 0) {
+        alert('No hay pedidos seleccionados para enviar');
+        return;
+      }
+      
+      // Obtener información del usuario actual
+      const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+      const nombreUsuario = usuarioActual.nombre || 'Usuario';
+      const telefonoUsuario = usuarioActual.telefono || 'No especificado';
+      
+      const ids = pedidosAgregados.map(pedido => pedido.id).join(', ');
+      const productos = pedidosAgregados.map(pedido => pedido.nombre).join(', ');
+      const mensaje = `🛒 PEDIDO COMPLETO\n\n👤 Cliente: ${nombreUsuario}\n📱 Teléfono: ${telefonoUsuario}\n📦 Productos: ${productos}\n🆔 IDs: ${ids}`;
+      const token = "8260563638:AAHl4TItRl3FpG_1wkX7YRGWOzmqwuJNdG8";
+      const chatId = "5239956110";
+      
+      // URL de la API de Telegram para enviar mensaje
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      
+      // Datos del mensaje
+      const data = {
+        chat_id: chatId,
+        text: mensaje,
+        parse_mode: "HTML"
+      };
+      
+      // Enviar mensaje usando fetch
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          alert('Pedido completo enviado exitosamente a Icaro 3D');
+          // Limpiar pedidos después de enviar
+          localStorage.removeItem('pedidos');
+          cerrarModal();
+        } else {
+          alert('Error al enviar pedido: ' + data.description);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al enviar pedido a Icaro 3D');
+      });
     }
 
     // Cargar producto cuando la página esté lista

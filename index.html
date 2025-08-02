@@ -87,6 +87,11 @@
             <input type="password" id="confirm-password" name="confirm-password" required placeholder="Repite tu contraseña">
           </div>
           
+          <div class="form-group">
+            <label for="telefono">Número de Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" required placeholder="Ej: 3001234567">
+          </div>
+          
           <div class="form-options">
             <label class="checkbox-container">
               <input type="checkbox" id="terms" required>
@@ -178,6 +183,7 @@
             email: usuario.email,
             nombre: usuario.nombre,
             apellido: usuario.apellido,
+            telefono: usuario.telefono,
             rol: usuario.rol
           };
           
@@ -215,6 +221,7 @@
       const email = document.getElementById('email-register').value;
       const password = document.getElementById('password-register').value;
       const confirmPassword = document.getElementById('confirm-password').value;
+      const telefono = document.getElementById('telefono').value;
       const terms = document.getElementById('terms').checked;
       
       // Validaciones
@@ -256,6 +263,7 @@
           password: password,
           nombre: nombre,
           apellido: apellido,
+          telefono: telefono,
           rol: 'usuario'
         };
         
