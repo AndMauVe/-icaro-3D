@@ -290,7 +290,8 @@
       const nombreProducto = productoActual.nombre;
       const mensaje = `🛒 NUEVO PEDIDO\n\n👤 Cliente: ${nombreUsuario}\n📱 Teléfono: ${telefonoUsuario}\n📦 Producto: ${nombreProducto}\n🆔 ID Producto: ${id}`;
       const token = "8260563638:AAHl4TItRl3FpG_1wkX7YRGWOzmqwuJNdG8";
-      const chatId = "5239956110"; // ID del chat donde se enviará el mensaje
+      //const chatId = "5239956110"; // ID del chat donde se enviará el mensaje
+      const chatId = "-4823520971";
       
       // URL de la API de Telegram para enviar mensaje
       const url = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -446,7 +447,8 @@
       const productos = pedidosAgregados.map(pedido => pedido.nombre).join(', ');
       const mensaje = `🛒 PEDIDO COMPLETO\n\n👤 Cliente: ${nombreUsuario}\n📱 Teléfono: ${telefonoUsuario}\n📦 Productos: ${productos}\n🆔 IDs: ${ids}`;
       const token = "8260563638:AAHl4TItRl3FpG_1wkX7YRGWOzmqwuJNdG8";
-      const chatId = "5239956110";
+      //const chatId = "5239956110";
+      const chatId = "-4823520971";
       
       // URL de la API de Telegram para enviar mensaje
       const url = `https://api.telegram.org/bot${token}/sendMessage`;
